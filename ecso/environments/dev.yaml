@@ -1,0 +1,43 @@
+apiVersion: ecso/v1
+kind: Environment
+
+metadata:
+  name: dev
+  cluster: ecso-cluster
+  region: us-east-1
+
+spec:
+  autoSync: true
+
+  aws:
+    accountId: "085122410972"
+    ecrRegistry: "085122410972.dkr.ecr.us-east-1.amazonaws.com"
+
+  network:
+    vpcId: vpc-024f8879c138fa369
+    subnets:
+      - subnet-06079416fd3647700
+      - subnet-08551b817857a3c44
+    securityGroups:
+      - sg-0a5ef64bf8cba1deb
+
+  loadBalancer:
+    targetGroupArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:targetgroup/ecso-test-app-tg/e7d45a19b1f4d2ca
+
+  services:
+    test-app:
+      image: ecso-test-app
+      tag: latest
+      replicas: 1
+      resources:
+        cpu: 256
+        memory: 512
+      ports:
+        - containerPort: 8080
+      healthCheck:
+        path: /health
+      environment:
+        - name: NODE_ENV
+          value: development
+        - name: APP_VERSION
+          value: "1.0.0"
