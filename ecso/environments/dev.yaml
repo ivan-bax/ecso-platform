@@ -44,8 +44,13 @@ spec:
       healthCheck:
         path: /health
       loadBalancers:
-        - targetGroupArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:targetgroup/ecso-test-app-tg/e7d45a19b1f4d2ca
+        - listenerArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:listener/app/ecso-alb/e15417ca467074a9/ca134d5d685d91b3
           containerPort: 8080
+          routing:
+            pathPatterns:
+              - "/app/*"
+              - "/health"
+            priority: 200
       env:
         NODE_ENV: development
         APP_VERSION: "1.2.0"
@@ -62,3 +67,12 @@ spec:
       healthCheck:
         path: /
         port: 80
+      loadBalancers:
+        - listenerArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:listener/app/ecso-alb/e15417ca467074a9/ca134d5d685d91b3
+          containerPort: 80
+          routing:
+            pathPatterns:
+              - "/nginx/*"
+              - "/static/*"
+            priority: 300
+            healthCheckPath: /
