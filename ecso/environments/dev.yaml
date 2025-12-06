@@ -9,6 +9,11 @@ metadata:
 spec:
   autoSync: true
 
+  terraform:
+    bucket: ecso-terraform-state-085122410972
+    key: environments/dev/terraform.tfstate
+    region: us-east-1
+
   aws:
     accountId: "085122410972"
     ecrRegistry: "085122410972.dkr.ecr.us-east-1.amazonaws.com"
