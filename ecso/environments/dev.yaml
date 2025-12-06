@@ -49,3 +49,16 @@ spec:
       env:
         NODE_ENV: development
         APP_VERSION: "1.2.0"
+
+    nginx:
+      image: public.ecr.aws/nginx/nginx
+      tag: "1.25-alpine"
+      replicas: 1
+      resources:
+        cpu: 256
+        memory: 512
+      ports:
+        - containerPort: 80
+      healthCheck:
+        path: /
+        port: 80
