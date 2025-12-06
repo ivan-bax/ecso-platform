@@ -27,17 +27,20 @@ spec:
   services:
     test-app:
       image: ecso-test-app
-      tag: latest
+      tag: bca6545
       replicas: 1
+      autoscaling:
+        enabled: true
       resources:
-        cpu: 256
-        memory: 512
+        cpu: 512
+        memory: 1024
       ports:
         - containerPort: 8080
       healthCheck:
         path: /health
-      environment:
-        - name: NODE_ENV
-          value: development
-        - name: APP_VERSION
-          value: "1.0.0"
+      loadBalancers:
+        - targetGroupArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:targetgroup/ecso-test-app-tg/e7d45a19b1f4d2ca
+          containerPort: 8080
+      env:
+        NODE_ENV: development
+        APP_VERSION: "1.1.0"

@@ -1,0 +1,256 @@
+apiVersion: ecso/v1
+kind: Infrastructure
+
+metadata:
+  name: base
+  region: us-east-1
+  accountId: "085122410972"
+
+spec:
+  # VPC Configuration (using existing)
+  vpc:
+    create: false
+    id: vpc-024f8879c138fa369
+    subnets:
+      private:
+        - subnet-06079416fd3647700
+        - subnet-08551b817857a3c44
+      public:
+        - subnet-0513007acb9c0052e
+        - subnet-0ee569ca9675f7bef
+
+  # ECS Cluster (using existing)
+  cluster:
+    name: ecso-cluster
+    create: false
+
+  # IAM Roles
+  iam:
+    taskExecutionRole:
+      name: ecso-task-execution-role
+      create: true
+      managedPolicies:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      inlinePolicies:
+        - name: ecr-secrets-access
+          statements:
+            - sid: ECRAccess
+              effect: Allow
+              actions:
+                - ecr:GetAuthorizationToken
+                - ecr:BatchCheckLayerAvailability
+                - ecr:GetDownloadUrlForLayer
+                - ecr:BatchGetImage
+              resources:
+                - "*"
+            - sid: SecretsAccess
+              effect: Allow
+              actions:
+                - secretsmanager:GetSecretValue
+              resources:
+                - arn:aws:secretsmanager:us-east-1:085122410972:secret:ecso/*
+            - sid: LogsAccess
+              effect: Allow
+              actions:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              resources:
+                - "*"
+
+    taskRoles:
+      - name: ecso-task-role
+        create: true
+        description: "Default task role for ECSO managed applications"
+        inlinePolicies:
+          - name: ecs-exec
+            statements:
+              - sid: ECSExec
+                effect: Allow
+                actions:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                resources:
+                  - "*"
+
+      - name: ecso-controller-role
+        create: true
+        description: "ECSO controller role with full cluster management"
+        inlinePolicies:
+          - name: ecs-management
+            statements:
+              - sid: ECSFullAccess
+                effect: Allow
+                actions:
+                  - ecs:*
+                resources:
+                  - "*"
+              - sid: EC2NetworkAccess
+                effect: Allow
+                actions:
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeVpcAttribute
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateSecurityGroup
+                  - ec2:DeleteSecurityGroup
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:AuthorizeSecurityGroupEgress
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:RevokeSecurityGroupEgress
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                resources:
+                  - "*"
+              - sid: LoadBalancerAccess
+                effect: Allow
+                actions:
+                  - elasticloadbalancing:*
+                resources:
+                  - "*"
+              - sid: CloudWatchAccess
+                effect: Allow
+                actions:
+                  - logs:*
+                  - cloudwatch:*
+                resources:
+                  - "*"
+              - sid: AutoScalingAccess
+                effect: Allow
+                actions:
+                  - application-autoscaling:*
+                resources:
+                  - "*"
+          - name: iam-passrole
+            statements:
+              - sid: IAMPassRole
+                effect: Allow
+                actions:
+                  - iam:PassRole
+                  - iam:GetRole
+                resources:
+                  - arn:aws:iam::085122410972:role/ecso-*
+          - name: dynamodb-state
+            statements:
+              - sid: DynamoDBState
+                effect: Allow
+                actions:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                resources:
+                  - arn:aws:dynamodb:us-east-1:085122410972:table/ecso-state
+          - name: secrets-access
+            statements:
+              - sid: SecretsAccess
+                effect: Allow
+                actions:
+                  - secretsmanager:GetSecretValue
+                resources:
+                  - arn:aws:secretsmanager:us-east-1:085122410972:secret:ecso/*
+          - name: ecr-access
+            statements:
+              - sid: ECRAccess
+                effect: Allow
+                actions:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                resources:
+                  - "*"
+
+  # ECR Repositories
+  ecr:
+    repositories:
+      - name: ecso
+        imageScanOnPush: true
+        lifecyclePolicy:
+          maxImages: 20
+
+  # Secrets Manager
+  secrets:
+    secrets:
+      - name: ecso/github-token
+        description: "GitHub PAT for ECSO to access ecso-platform repo"
+        generatePolicy: manual
+      - name: ecso/webhook-secret
+        description: "Secret for GitHub webhook signature verification"
+        generatePolicy: generate
+        passwordLength: 32
+
+  # DynamoDB Tables
+  dynamodb:
+    tables:
+      - name: ecso-state
+        billingMode: PAY_PER_REQUEST
+        hashKey:
+          name: pk
+          type: S
+        sortKey:
+          name: sk
+          type: S
+        ttlAttribute: ttl
+        pointInTimeRecovery: false
+
+  # Load Balancer Configuration
+  loadBalancer:
+    name: ecso-alb
+    create: false
+    arn: arn:aws:elasticloadbalancing:us-east-1:085122410972:loadbalancer/app/ecso-alb/e15417ca467074a9
+    listenerArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:listener/app/ecso-alb/e15417ca467074a9/ca134d5d685d91b3
+    vpcId: vpc-024f8879c138fa369
+
+    targetGroups:
+      - name: ecso-controller-tg
+        port: 8080
+        protocol: HTTP
+        targetType: ip
+        healthCheck:
+          path: /api/v1/health
+          interval: 30
+          timeout: 5
+          healthyThreshold: 2
+          unhealthyThreshold: 3
+        deregistrationDelay: 30
+
+    listenerRules:
+      - priority: 100
+        conditions:
+          pathPattern:
+            - "/api/*"
+            - "/webhook/*"
+            - "/docs"
+            - "/openapi.json"
+        targetGroup: ecso-controller-tg
+
+  # ECSO Controller
+  controller:
+    enabled: true
+    image: ecso
+    tag: latest
+    replicas: 1
+    cpu: 512
+    memory: 1024
+    taskRole: ecso-controller-role
+    targetGroup: ecso-controller-tg
+
+    config:
+      gitRepo: https://github.com/ivan-bax/ecso-platform.git
+      gitBranch: main
+      pollInterval: 60
+      autoSync:
+        - dev
+
+    secrets:
+      - name: GITHUB_TOKEN
+        secretName: ecso/github-token
+        secretKey: token
+
+    webhookEnabled: true
+    webhookSecretName: ecso/webhook-secret
