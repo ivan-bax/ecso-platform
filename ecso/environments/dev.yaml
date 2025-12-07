@@ -26,8 +26,52 @@ spec:
     securityGroups:
       - sg-0a5ef64bf8cba1deb
 
-  loadBalancer:
-    targetGroupArn: arn:aws:elasticloadbalancing:us-east-1:085122410972:targetgroup/ecso-test-app-tg/e7d45a19b1f4d2ca
+  # Phase 1: DynamoDB Tables
+  dynamodb:
+    sessions:
+      billingMode: PAY_PER_REQUEST
+      hashKey:
+        name: pk
+        type: S
+      sortKey:
+        name: sk
+        type: S
+      ttl:
+        enabled: true
+        attribute: expiresAt
+      globalSecondaryIndexes:
+        - name: gsi1
+          hashKey:
+            name: gsi1pk
+            type: S
+          sortKey:
+            name: gsi1sk
+            type: S
+          projection: ALL
+      allowedServices:
+        read:
+          - test-app
+        write:
+          - test-app
+
+  # Phase 2: RDS Databases
+  databases:
+    main-db:
+      engine: postgres
+      engineVersion: "15.4"
+      instanceClass: db.t3.micro
+      allocatedStorage: 20
+      maxAllocatedStorage: 100
+      database: appdb
+      username: admin
+      multiAz: false
+      publiclyAccessible: false
+      allowedServices:
+        - test-app
+      backup:
+        retentionPeriod: 7
+      deletionProtection: false
+      skipFinalSnapshot: true
 
   services:
     test-app:
