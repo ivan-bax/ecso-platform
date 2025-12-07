@@ -58,12 +58,12 @@ spec:
   databases:
     main-db:
       engine: postgres
-      engineVersion: "15.4"
+      engineVersion: "15.10"
       instanceClass: db.t3.micro
       allocatedStorage: 20
       maxAllocatedStorage: 100
       database: appdb
-      username: admin
+      username: dbadmin
       multiAz: false
       publiclyAccessible: false
       allowedServices:
