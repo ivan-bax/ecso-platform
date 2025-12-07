@@ -183,12 +183,38 @@ spec:
                   - rds:ListTagsForResource
                 resources:
                   - "*"
+              - sid: RDSServiceLinkedRole
+                effect: Allow
+                actions:
+                  - iam:CreateServiceLinkedRole
+                resources:
+                  - arn:aws:iam::085122410972:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS
+                condition:
+                  StringLike:
+                    iam:AWSServiceName: rds.amazonaws.com
+          - name: iam-policy-management
+            statements:
+              - sid: IAMPolicyManagement
+                effect: Allow
+                actions:
+                  - iam:CreatePolicy
+                  - iam:DeletePolicy
+                  - iam:GetPolicy
+                  - iam:GetPolicyVersion
+                  - iam:ListPolicyVersions
+                  - iam:CreatePolicyVersion
+                  - iam:DeletePolicyVersion
+                  - iam:TagPolicy
+                  - iam:UntagPolicy
+                resources:
+                  - arn:aws:iam::085122410972:policy/ecso-*
           - name: secrets-access
             statements:
               - sid: SecretsAccess
                 effect: Allow
                 actions:
                   - secretsmanager:GetSecretValue
+                  - secretsmanager:GetResourcePolicy
                 resources:
                   - arn:aws:secretsmanager:us-east-1:085122410972:secret:ecso/*
           - name: secrets-management
@@ -203,6 +229,9 @@ spec:
                   - secretsmanager:PutSecretValue
                   - secretsmanager:TagResource
                   - secretsmanager:UntagResource
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:PutResourcePolicy
+                  - secretsmanager:DeleteResourcePolicy
                 resources:
                   - arn:aws:secretsmanager:us-east-1:085122410972:secret:ecso/*
           - name: acm-management
