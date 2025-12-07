@@ -145,6 +145,44 @@ spec:
                   - dynamodb:Scan
                 resources:
                   - arn:aws:dynamodb:us-east-1:085122410972:table/ecso-state
+          - name: dynamodb-management
+            statements:
+              - sid: DynamoDBManagement
+                effect: Allow
+                actions:
+                  - dynamodb:CreateTable
+                  - dynamodb:DeleteTable
+                  - dynamodb:DescribeTable
+                  - dynamodb:UpdateTable
+                  - dynamodb:TagResource
+                  - dynamodb:UntagResource
+                  - dynamodb:ListTagsOfResource
+                  - dynamodb:DescribeTimeToLive
+                  - dynamodb:UpdateTimeToLive
+                  - dynamodb:DescribeContinuousBackups
+                  - dynamodb:UpdateContinuousBackups
+                resources:
+                  - arn:aws:dynamodb:us-east-1:085122410972:table/*-dev
+                  - arn:aws:dynamodb:us-east-1:085122410972:table/*-prod
+                  - arn:aws:dynamodb:us-east-1:085122410972:table/*-staging
+          - name: rds-management
+            statements:
+              - sid: RDSManagement
+                effect: Allow
+                actions:
+                  - rds:CreateDBInstance
+                  - rds:DeleteDBInstance
+                  - rds:DescribeDBInstances
+                  - rds:ModifyDBInstance
+                  - rds:RebootDBInstance
+                  - rds:CreateDBSubnetGroup
+                  - rds:DeleteDBSubnetGroup
+                  - rds:DescribeDBSubnetGroups
+                  - rds:AddTagsToResource
+                  - rds:RemoveTagsFromResource
+                  - rds:ListTagsForResource
+                resources:
+                  - "*"
           - name: secrets-access
             statements:
               - sid: SecretsAccess
@@ -153,6 +191,42 @@ spec:
                   - secretsmanager:GetSecretValue
                 resources:
                   - arn:aws:secretsmanager:us-east-1:085122410972:secret:ecso/*
+          - name: secrets-management
+            statements:
+              - sid: SecretsManagement
+                effect: Allow
+                actions:
+                  - secretsmanager:CreateSecret
+                  - secretsmanager:DeleteSecret
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:UpdateSecret
+                  - secretsmanager:PutSecretValue
+                  - secretsmanager:TagResource
+                  - secretsmanager:UntagResource
+                resources:
+                  - arn:aws:secretsmanager:us-east-1:085122410972:secret:ecso/*
+          - name: acm-management
+            statements:
+              - sid: ACMManagement
+                effect: Allow
+                actions:
+                  - acm:RequestCertificate
+                  - acm:DeleteCertificate
+                  - acm:DescribeCertificate
+                  - acm:AddTagsToCertificate
+                  - acm:RemoveTagsFromCertificate
+                  - acm:ListTagsForCertificate
+                resources:
+                  - "*"
+              - sid: Route53Access
+                effect: Allow
+                actions:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                  - route53:GetChange
+                resources:
+                  - "*"
           - name: ecr-access
             statements:
               - sid: ECRAccess
